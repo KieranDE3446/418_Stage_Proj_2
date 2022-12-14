@@ -1,0 +1,82 @@
+#This cell contains the test_func() code which uses the previously trained data to classify new image types
+
+def test_func(img_path, model, size):
+    file_names = os.listdir(img_path)                           #create list of all file names in folder
+    test_correct = 0                                            #initialize correct counter to 0
+
+    rot = 0
+    theta = 90
+    sum_edg = np.empty(theta)
+
+    y_pred = np.empty(len(file_names))                          #create empty array for class prediction
+    y_test = np.empty(len(file_names))                          #create empty array for correct classification
+    x = np.empty((len(file_names), size))                    #create list to store image arrays
+
+    for file in range(len(file_names)):                         #for loop to create arrays of predicted class and correct class
+        if ('cir') in file_names[file]:                         #checks if string 'circ' is in the file name
+            y_test[file] = 0                                    #assigns class 0 if image is circle
+        if ('rec') in file_names[file]:                         #checks if string 'rec' is in the file name
+            y_test[file] = 1                                    #assigns class 1 if image is circle
+        if ('squ') in file_names[file]:                         #checks if string 'squ' is in the file name
+            y_test[file] = 2                                    #assigns class 2 if image is circle
+
+        try:                                                    #tries to open file, throws error if needed
+            img = Image.open(img_path + '/' + file_names[file], mode='r')   #if error caught, goes to exception
+            filter = ImageEnhance.Contrast(img)
+            img = filter.enhance(1)
+            cont = ImageEnhance.Sharpness(img)
+            img = cont.enhance(1)
+            img_gray = img.convert('L')                         #convert image to grayscale 
+            #print("Image " +(file) + " converted")-------------Print if successful for testing
+            width, height = img_gray.size                       #sets 'width' and 'height' variables to size of original image
+            side = min(width, height)                           #sets 'side' variable to smaller value (between width and height) of image
+            img = img_gray.crop((width/2-side/2, height/2-side/2, width/2+side/2, height/2+side/2))
+            img = img.resize((size,size))                             #resizes image to specified size in main function
+            
+            #img.show()-----------------------------------------Display image for testing
+            data = np.array(img)
+            edges = feature.canny(data, sigma = 1)
+            image = Image.fromarray(edges)
+            new_coords = np.argwhere(image)
+            orientation = np.arctan2(new_coords[:, 1], new_coords[:, 0])
+            max_val_2 = orientation.mean()
+            #if file == 12 or file == 33 or file == 56:
+                #image.show()
+            rot_img_2 = image.rotate(max_val_2)
+
+            edge_coords = np.argwhere(rot_img_2)
+            center = edge_coords.mean(axis=0)
+            coord_x = center[0]
+            coord_y = center[1]
+            im_cropped = rot_img_2.crop((coord_x - size/2, coord_y - size/2, coord_x + size/2, coord_y + size/2))
+            image = im_cropped
+            
+
+            
+            rot_img_arr_2 = np.array(image)
+            #if file == 12 or file == 33 or file == 56:
+                #rot_img_2.show()
+            sum_edg_2 = np.count_nonzero(rot_img_arr_2, axis = 0)
+            for k in range(size):
+                if sum_edg_2[k] < 10:
+                    sum_edg_2[k] = 0
+            x[file,:] = sum_edg_2
+            #print(len(sum_edg_2))
+
+
+            #im_array = asarray(img)                             #saves the image data as array of vectorized grayscale data points
+            #x[file,:] = im_array.reshape(1,-1)                  #saves array data into x (input) variable
+
+        except IOError:
+            print(file + "Does not exist in your directory")    #notifies user if an error has occurred
+
+        y_pred[file] = model.predict(x[file].reshape(1,-1))    #appends predicted class value to the y_pred array
+    accuracy = accuracy_score(y_test, y_pred)
+    #print("y_test matrix: ")-------------------------------------------------------------------------------------
+    #print(y_test)                                              This code was for confirming confusion matrix
+    #print("y_pred matrix: ")                                   and accuracy scores manually
+    #print(y_pred)------------------------------------------------------------------------------------------------
+    print("Testing Data Confusion Matrix: ")                    
+    print(confusion_matrix(y_test, y_pred))                     #prints confusion matrix
+    print("Testing Data Accuracy Score: ")
+    print(accuracy*100, "%")                                    #prints accuracy score as percentage
