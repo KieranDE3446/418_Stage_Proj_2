@@ -1,0 +1,24 @@
+#This block is the main function that imports files and sets the main parameters
+#It calls training and testing functions from separate cells
+
+import matplotlib.pyplot as plt                           #imports matplotlib
+import numpy as np                                        #imports numpy library
+from PIL import Image, ImageEnhance                                     #imports pillow library
+import os                                                 #import operating system functions
+import pandas as pd                                       #import pandas lib
+import math                                               #imports special math functions
+from numpy import asarray
+from sklearn import linear_model
+from sklearn.metrics import confusion_matrix, accuracy_score
+from skimage import feature
+
+
+#save the path of the training images in a variable
+train_img_path = r"C:\Users\34463\Desktop\Python Projects\Proj_Stage_2\Lego_dataset_2\training"
+#save the path of the test images in a variable
+test_img_path = r"C:\Users\34463\Desktop\Python Projects\Proj_Stage_2\Lego_dataset_2\testing"
+
+m = 64                                                   #variable to define the size the image will be cropped to
+m = math.floor(m/2)*2
+model = train_func(train_img_path, m)                     #assigns model and calls the machine learning training function
+test_func(test_img_path, model, m)
